@@ -4,7 +4,7 @@ import { v2 as cloudinary } from "cloudinary";
 
 const createPost = async (req, res) => {
 	try {
-		const { postedBy, text } = req.body;
+		const { postedBy, text, hashtags } = req.body;
 		let { img } = req.body;
 
 		if (!postedBy || !text) {
@@ -30,7 +30,7 @@ const createPost = async (req, res) => {
 			img = uploadedResponse.secure_url;
 		}
 
-		const newPost = new Post({ postedBy, text, img });
+		const newPost = new Post({ postedBy, text, img, hashtags });
 		await newPost.save();
 
 		res.status(201).json(newPost);
@@ -40,6 +40,7 @@ const createPost = async (req, res) => {
 	}
 };
 
+// Función para obtener un post por ID
 const getPost = async (req, res) => {
 	try {
 		const post = await Post.findById(req.params.id);
@@ -54,6 +55,7 @@ const getPost = async (req, res) => {
 	}
 };
 
+// Función para eliminar un post por ID
 const deletePost = async (req, res) => {
 	try {
 		const post = await Post.findById(req.params.id);
@@ -78,6 +80,7 @@ const deletePost = async (req, res) => {
 	}
 };
 
+// Función para dar o quitar like a un post
 const likeUnlikePost = async (req, res) => {
 	try {
 		const { id: postId } = req.params;
@@ -106,6 +109,7 @@ const likeUnlikePost = async (req, res) => {
 	}
 };
 
+// Función para responder a un post
 const replyToPost = async (req, res) => {
 	try {
 		const { text } = req.body;
@@ -134,6 +138,7 @@ const replyToPost = async (req, res) => {
 	}
 };
 
+// Función para obtener los posts del feed del usuario
 const getFeedPosts = async (req, res) => {
 	try {
 		const userId = req.user._id;
@@ -152,6 +157,7 @@ const getFeedPosts = async (req, res) => {
 	}
 };
 
+// Función para obtener los posts de un usuario por su nombre de usuario
 const getUserPosts = async (req, res) => {
 	const { username } = req.params;
 	try {
@@ -168,20 +174,19 @@ const getUserPosts = async (req, res) => {
 	}
 };
 
-const getFilteredPosts = async (req, res) => {
-    try {
-        const { filterCriteria } = req.query; // Supongamos que los criterios de filtrado se pasan como query parameters
-        
-        // Realiza la lógica de filtrado basada en los criterios
-        const posts = await Post.find({ /* aquí irían las condiciones de filtrado */ });
-
-        res.status(200).json(posts);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-        console.log("Error in getFilteredPosts: ", err.message);
-    }
+// Función para buscar posts por hashtag
+const searchPostsByHashtag = async (req, res) => {
+	try {
+		const { hashtag } = req.params;
+		const posts = await Post.find({ hashtags: hashtag }).populate('postedBy');
+		if (posts.length === 0) {
+			return res.status(404).json({ message: "No posts found with this hashtag" });
+		}
+		res.status(200).json(posts);
+	} catch (err) {
+		res.status(500).json({ error: err.message });
+	}
 };
 
+export { createPost, getPost, deletePost, likeUnlikePost, replyToPost, getFeedPosts, getUserPosts, searchPostsByHashtag };
 
-
-export { createPost, getPost, deletePost, likeUnlikePost, replyToPost, getFeedPosts, getUserPosts, getFilteredPosts, };

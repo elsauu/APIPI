@@ -41,12 +41,10 @@ const userSchema = mongoose.Schema(
             type: Boolean,
             default: false,
         },
-        tags: [
-            {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: "Tag",
-            },
-        ],
+		selectedTags: {
+			type: [String],
+			default: []
+		  },
     },
     {
         timestamps: true,

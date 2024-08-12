@@ -4,6 +4,8 @@ import bcrypt from "bcryptjs";
 import generateTokenAndSetCookie from "../utils/helpers/generateTokenAndSetCookie.js";
 import { v2 as cloudinary } from "cloudinary";
 import mongoose from "mongoose";
+import express from 'express';
+
 
 const getUserProfile = async (req, res) => {
 	// We will fetch user profile either with username or userId
@@ -139,16 +141,23 @@ const followUnFollowUser = async (req, res) => {
 };
 
 const updateUser = async (req, res) => {
-	const { name, email, username, password, bio } = req.body;
+	const { name, email, username, password, bio, selectedTags } = req.body;
 	let { profilePic } = req.body;
+
 
 	const userId = req.user._id;
 	try {
+		console.log("Received data:", req.body);  // Log para depuración
+
 		let user = await User.findById(userId);
 		if (!user) return res.status(400).json({ error: "User not found" });
 
 		if (req.params.id !== userId.toString())
 			return res.status(400).json({ error: "You cannot update other user's profile" });
+
+		if (selectedTags) {
+			user.selectedTags = selectedTags;
+		}
 
 		if (password) {
 			const salt = await bcrypt.genSalt(10);
@@ -170,8 +179,8 @@ const updateUser = async (req, res) => {
 		user.username = username || user.username;
 		user.profilePic = profilePic || user.profilePic;
 		user.bio = bio || user.bio;
-
-		user = await user.save();
+		user.selectedTags = selectedTags;
+		await user.save({ validateBeforeSave: false });
 
 		// Find all posts that this user replied and update username and userProfilePic fields
 		await Post.updateMany(
@@ -194,11 +203,11 @@ const updateUser = async (req, res) => {
 		console.log("Error in updateUser: ", err.message);
 	}
 };
-
 const getSuggestedUsers = async (req, res) => {
 	try {
 		// exclude the current user from suggested users array and exclude users that current user is already following
 		const userId = req.user._id;
+		const userTags = req.user.selectedTags; // obtener las tags del usuario que tiene iniciada sesión
 
 		const usersFollowedByYou = await User.findById(userId).select("following");
 
@@ -206,6 +215,7 @@ const getSuggestedUsers = async (req, res) => {
 			{
 				$match: {
 					_id: { $ne: userId },
+					selectedTags: { $elemMatch: { $in: userTags } } // filtrar por tags
 				},
 			},
 			{
@@ -238,34 +248,18 @@ const freezeAccount = async (req, res) => {
 		res.status(500).json({ error: error.message });
 	}
 };
+const router = express.Router();
 
-const updateUserTags = async (req, res) => {
-    try {
-        const { tags } = req.body; // Suponiendo que las etiquetas se envían en el cuerpo de la solicitud
-        const userId = req.params.id;
 
-        let user = await User.findById(userId);
-        if (!user) return res.status(400).json({ error: "User not found" });
-
-        user.tags = tags; // Actualiza las etiquetas del usuario
-        user = await user.save();
-
-        res.status(200).json(user);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-        console.log("Error in updateUserTags: ", err.message);
-    }
-};
 
 export {
-    signupUser,
-    loginUser,
-    logoutUser,
-    followUnFollowUser,
-    updateUser,
-    getUserProfile,
-    getSuggestedUsers,
-    freezeAccount,
-    updateUserTags, // Asegúrate de exportar la función aquí
+	signupUser,
+	loginUser,
+	logoutUser,
+	followUnFollowUser,
+	updateUser,
+	getUserProfile,
+	getSuggestedUsers,
+	freezeAccount,
+	
 };
-
