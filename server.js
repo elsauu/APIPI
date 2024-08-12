@@ -47,4 +47,7 @@ if (process.env.NODE_ENV === "production") {
 	});
 }
 
-server.listen(PORT, () => console.log(`Server started at http://localhost:${PORT}`));
+server.listen(PORT, () => {
+    const host = process.env.HOST || `http://localhost:${PORT}`;
+    console.log(`Server started at ${host}`);
+});
