@@ -1,3 +1,5 @@
+// socket.js
+
 import { Server } from "socket.io";
 import http from "http";
 import express from "express";
@@ -8,8 +10,9 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
 	cors: {
-		origin: "https://c6b7-2806-2f0-4521-fc5a-fc60-684a-e834-ba46.ngrok-free.app/",
+		origin: ["http://localhost:3000", "https://c6b7-2806-2f0-4521-fc5a-fc60-684a-e834-ba46.ngrok-free.app"], // Permitir conexiones desde ambos orígenes
 		methods: ["GET", "POST"],
+		credentials: true // Permitir el envío de cookies si es necesario
 	},
 });
 

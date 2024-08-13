@@ -1,3 +1,5 @@
+// server.js
+
 import path from "path";
 import express from "express";
 import dotenv from "dotenv";
@@ -9,6 +11,7 @@ import messageRoutes from "./routes/messageRoutes.js";
 import { v2 as cloudinary } from "cloudinary";
 import { app, server } from "./socket/socket.js";
 import job from "./cron/cron.js";
+import cors from "cors"; // Importar cors
 
 dotenv.config();
 
@@ -25,29 +28,32 @@ cloudinary.config({
 });
 
 // Middlewares
-app.use(express.json({ limit: "50mb" })); // To parse JSON data in the req.body
-app.use(express.urlencoded({ extended: true })); // To parse form data in the req.body
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// **Configuración de CORS**
+app.use(cors({
+	origin: ["http://localhost:3000", "https://c6b7-2806-2f0-4521-fc5a-fc60-684a-e834-ba46.ngrok-free.app"], // Permitir solicitudes desde ambos orígenes
+	methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+	credentials: true // Permitir el envío de cookies si es necesario
+}));
 
 // Routes
 app.use("/api/users", userRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/messages", messageRoutes);
 
-
-
-// http://localhost:5000 => backend,frontend
-
+// Servir archivos estáticos en producción
 if (process.env.NODE_ENV === "production") {
 	app.use(express.static(path.join(__dirname, "/frontend/dist")));
 
-	// react app
 	app.get("*", (req, res) => {
 		res.sendFile(path.resolve(__dirname, "frontend", "dist", "index.html"));
 	});
 }
 
 server.listen(PORT, () => {
-    const host = process.env.HOST || `http://localhost:${PORT}`;
-    console.log(`Server started at ${host}`);
+	const host = process.env.HOST || `http://localhost:${PORT}`;
+	console.log(`Server started at ${host}`);
 });
